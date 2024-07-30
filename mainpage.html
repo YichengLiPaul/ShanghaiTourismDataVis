@@ -58,22 +58,40 @@
             box-shadow: 0 2px #666;
             transform: translateY(2px);
         }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            width: 200px;
+            margin: 20px auto;
+        }
     </style>
 </head>
 <body>
     <h1>Shanghai Overseas Tourists Over Time</h1>
     <div id="chart"></div>
-    <button id="next" class="button">Next Scene</button>
+    <div class="button-container">
+        <button id="prev" class="button">Previous Scene</button>
+        <button id="next" class="button">Next Scene</button>
+    </div>
     <div id="tooltip" class="tooltip"></div>
     <div id="legend" class="legend"></div>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
     <script>
+        let currentScene = 0;
+
+        // Define scenes with their corresponding end dates
+        const scenes = [
+            { endDate: new Date('2020-01-01T00:00:00Z') },
+            { endDate: new Date('2023-01-01T00:00:00Z') },
+            { endDate: new Date('2024-12-01T00:00:00Z') }
+        ];
+
         // Load data
         d3.csv('Shanghai_overseas_tourists_preprocessed.csv').then(data => {
             // Parse date and convert to numeric values
             data.forEach(d => {
-                d['Year and Month'] = new Date(d['Year and Month'] + 'UTC');
+                d['Year and Month'] = new Date(d['Year and Month'] + ' UTC');
                 d['International Tourists'] = +d['International Tourists'];
                 d['HK/Macau Tourists'] = +d['HK/Macau Tourists'];
                 d['Taiwan Tourists'] = +d['Taiwan Tourists'];
@@ -112,7 +130,7 @@
                .call(d3.axisLeft(y).tickFormat(d => `${d / 10}K`)); // Format in K
 
             // Add line
-            svg.append("path")
+            const line = svg.append("path")
                .datum(data)
                .attr("class", "line")
                .attr("d", d3.line()
@@ -134,7 +152,7 @@
             };
 
             // Add bars
-            svg.selectAll(".series")
+            const bars = svg.selectAll(".series")
                .data(series)
                .enter().append("g")
                .attr("class", "series")
@@ -156,9 +174,10 @@
                    const yearMonth = d.data['Year and Month'].toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
                    tooltip.transition().duration(200).style("opacity", .9);
                    tooltip.html(`<strong>${yearMonth}</strong><br/>
-                                 International Tourists: ${d.data['International Tourists']}K<br/>
-                                 HK/Macau Tourists: ${d.data['HK/Macau Tourists']}K<br/>
-                                 Taiwan Tourists: ${d.data['Taiwan Tourists']}K`)
+                                 Total Tourists: ${d3.format(".1f")(d.data['Total Tourists'])}K<br/>
+                                 International Tourists: ${d3.format(".1f")(d.data['International Tourists'])}K<br/>
+                                 HK/Macau Tourists: ${d3.format(".1f")(d.data['HK/Macau Tourists'])}K<br/>
+                                 Taiwan Tourists: ${d3.format(".1f")(d.data['Taiwan Tourists'])}K`)
                           .style("left", (event.pageX + 5) + "px")
                           .style("top", (event.pageY - 28) + "px");
                })
@@ -226,13 +245,52 @@
                 .annotations(annotations)
                 .type(d3.annotationCalloutElbow);
 
-            svg.append("g")
+            const annotationGroup = svg.append("g")
                 .attr("class", "annotation-group")
                 .call(makeAnnotations);
 
-            // Triggers for next scene (placeholder)
+            // Function to update the scene
+            function updateScene(sceneIndex) {
+                const endDate = scenes[sceneIndex].endDate;
+
+                // Update line
+                line.attr("d", d3.line()
+                    .x(d => x(d['Year and Month']))
+                    .y(d => {
+                        if (d['Year and Month'] <= endDate) {
+                            return y(d['Total Tourists']);
+                        } else {
+                            return null;
+                        }
+                    })
+                );
+
+                // Update bars
+                bars.attr("x", d => x(d.data['Year and Month']) - (width / data.length * 0.4))
+                    .attr("y", d => d.data['Year and Month'] <= endDate ? y(d[1]) : height)
+                    .attr("height", d => d.data['Year and Month'] <= endDate ? y(d[0]) - y(d[1]) : 0);
+
+                // Update annotations
+                annotationGroup.selectAll(".annotation")
+                    .attr("opacity", d => new Date(d.note.title + ' UTC') <= endDate ? 1 : 0);
+            }
+
+            // Initial scene
+            updateScene(currentScene);
+
+            // Triggers for next and previous scenes
             d3.select("#next").on("click", () => {
-                // Logic for changing scenes
+                if (currentScene < scenes.length - 1) {
+                    currentScene++;
+                    updateScene(currentScene);
+                }
+            });
+
+            d3.select("#prev").on("click", () => {
+                if (currentScene > 0) {
+                    currentScene--;
+                    updateScene(currentScene);
+                }
             });
         });
     </script>
