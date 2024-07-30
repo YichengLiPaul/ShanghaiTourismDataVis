@@ -8,6 +8,9 @@ tourist_data = pd.read_csv(file_path)
 #tourist_data['Year and Month'] = pd.to_datetime(tourist_data['Year and Month'], format='%Y/%m')
 
 # Calculate total tourists
+tourist_data['International Tourists'] *= 10
+tourist_data['HK/Macau Tourists'] *= 10
+tourist_data['Taiwan Tourists'] *= 10
 tourist_data['Total Tourists'] = tourist_data['International Tourists'] + tourist_data['HK/Macau Tourists'] + tourist_data['Taiwan Tourists']
 
 # Save preprocessed data
