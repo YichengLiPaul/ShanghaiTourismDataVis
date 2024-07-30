@@ -67,7 +67,7 @@
     </style>
 </head>
 <body>
-    <h1>Shanghai Overseas Tourists Over Time</h1>
+    <h1>Shanghai Overseas Tourist Count (2018-Now)</h1>
     <div id="chart"></div>
     <div class="button-container">
         <button id="prev" class="button">Previous Scene</button>
@@ -93,7 +93,7 @@
             data.forEach(d => {
                 d['Year and Month'] = new Date(d['Year and Month'] + ' UTC');
                 d['International Tourists'] = +d['International Tourists'];
-                d['HK/Macau Tourists'] = +d['HK/Macau Tourists'];
+                d['Hong Kong & Macau Tourists'] = +d['HK/Macau Tourists'];
                 d['Taiwan Tourists'] = +d['Taiwan Tourists'];
                 d['Total Tourists'] = +d['Total Tourists'];
             });
@@ -148,14 +148,14 @@
 
             // Stack data
             const stack = d3.stack()
-                            .keys(['International Tourists', 'HK/Macau Tourists', 'Taiwan Tourists']);
+                            .keys(['International Tourists', 'Hong Kong & Macau Tourists', 'Taiwan Tourists']);
 
             const series = stack(data);
 
             // Color mapping
             const colorMap = {
                 'International Tourists': 'yellow',
-                'HK/Macau Tourists': 'pink',
+                'Hong Kong & Macau Tourists': 'pink',
                 'Taiwan Tourists': 'lightgreen'
             };
 
@@ -184,9 +184,9 @@
                    tooltip.transition().duration(200).style("opacity", .9);
                    tooltip.html(`<strong>${yearMonth}</strong><br/>
                                  Total Tourists: ${d3.format(".1f")(d.data['Total Tourists'])}K<br/>
-                                 International Tourists: ${d3.format(".1f")(d.data['International Tourists'])}K<br/>
-                                 HK/Macau Tourists: ${d3.format(".1f")(d.data['HK/Macau Tourists'])}K<br/>
-                                 Taiwan Tourists: ${d3.format(".1f")(d.data['Taiwan Tourists'])}K`)
+                                 Foreign: ${d3.format(".1f")(d.data['International Tourists'])}K<br/>
+                                 Hong Kong & Macau: ${d3.format(".1f")(d.data['Hong Kong & Macau Tourists'])}K<br/>
+                                 Taiwan: ${d3.format(".1f")(d.data['Taiwan Tourists'])}K`)
                           .style("left", (event.pageX + 5) + "px")
                           .style("top", (event.pageY - 28) + "px");
                })
@@ -200,9 +200,9 @@
 
             // Add legend
             const legendData = [
-                { name: 'International Tourists', color: 'yellow' },
-                { name: 'HK/Macau Tourists', color: 'pink' },
-                { name: 'Taiwan Tourists', color: 'lightgreen' }
+                { name: 'Foreign Tourists', color: 'yellow' },
+                { name: 'Tourists from Hong Kong & Macau', color: 'pink' },
+                { name: 'Tourists from Taiwan (ROC)', color: 'lightgreen' }
             ];
 
             const legend = svg.selectAll(".legend")
@@ -270,6 +270,12 @@
                 annotationGroup.selectAll(".annotation")
                     .attr("opacity", d => new Date(d.note.title + ' UTC') <= endDate ? 1 : 0);
             }
+
+            svg.append("text")
+               .attr("x", width / 2)
+               .attr("y", height + margin.bottom - 10)
+               .attr("text-anchor", "middle")
+               .text("Data source: Shanghai Bureau of Statistics https://tjj.sh.gov.cn/ydsj56/index.html");
 
             // Initial scene
             updateScene(currentScene);
